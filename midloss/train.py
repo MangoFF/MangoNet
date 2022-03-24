@@ -11,7 +11,7 @@ import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data.dataloader import DataLoader
-from torch.utils.data.sampler import RandomSampler
+from torch.utils.data.sampler import SequentialSampler
 from tqdm import tqdm
 from midloss.utils.obj_factory import obj_factory
 from midloss.utils.utils import set_device, set_seed, str2int, save_checkpoint, get_arch
@@ -193,7 +193,9 @@ def main(
         val_dataset = obj_factory(val_dataset, transform=val_transforms)
 
     # Initialize loaders
-    sampler = RandomSampler(train_dataset, True, train_iterations) if train_iterations is not None else None
+    #sampler = RandomSampler(train_dataset, True, train_iterations) if train_iterations is not None else None
+    #不再使用随机取样
+    sampler = SequentialSampler(train_dataset)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, num_workers=workers, sampler=sampler,
                               shuffle=sampler is None, pin_memory=True, drop_last=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, num_workers=workers, shuffle=False, pin_memory=True)
@@ -227,8 +229,8 @@ def main(
         print("=> best val acc is '{}'".format(best_acc))
         model.apply(init_weights)
         model.load_state_dict(checkpoint['state_dict'], strict=False)
-        optimizer.load_state_dict(checkpoint["optimizer"])
-        scheduler.load_state_dict(checkpoint["scheduler"])
+        #optimizer.load_state_dict(checkpoint["optimizer"])
+        #scheduler.load_state_dict(checkpoint["scheduler"])
     else:
         print("=> no checkpoint found at '{}'".format(checkpoint_dir))
         if not pretrained:
