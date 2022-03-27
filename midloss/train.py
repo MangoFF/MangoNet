@@ -99,7 +99,9 @@ def main(
         logger.reset()
 
         # Set networks training mode
+        #这里model.train(False)跟原来的model.eval()是一个效果
         model.train(train)
+ 
 
         # For each batch
         for i, (input, target) in enumerate(pbar):
@@ -117,11 +119,19 @@ def main(
 
             # Execute model
             pred = model(input)
+            loss=None
+            if(isinstance(pred,tuple)):
+                pred,loss=pred
+
             # if pred.shape[2:] != target.shape[1:]:  # Make sure the prediction and target are of the same resolution
             #     pred = F.interpolate(pred, size=target.shape[1:], mode='bilinear')
 
             # Calculate loss
-            loss_total = criterion(pred, target)
+            if loss==None:
+                loss_total = criterion(pred, target)
+            else:
+                loss_total=criterion(pred, target)
+                loss_total+=((epochs-epoch)/epochs)*torch.mean(loss)
 
             # Benchmark
             running_metrics.update(target.cpu().numpy(), pred.argmax(1).cpu().numpy())
@@ -149,6 +159,7 @@ def main(
         # Epoch logs
         logger.log_scalars_avg('epoch/%s' % ('train' if train else 'val'), epoch, category='losses')
         logger.log_scalars_val('epoch/%s' % ('train' if train else 'val'), epoch, category='bench')
+        #如果可以我希望这里可以输出中间结果
         # if not train:
         #     # Log images
         #     input = input[0] if isinstance(input, (list, tuple)) else input
@@ -227,15 +238,17 @@ def main(
         start_epoch = checkpoint['epoch'] if 'epoch' in checkpoint else start_epoch
         best_acc = checkpoint['best_acc'] if 'best_acc' in checkpoint else best_acc
         print("=> best val acc is '{}'".format(best_acc))
-        model.apply(init_weights)
+        #resnet 已经做了初始化，这里无需继续做初始化了
+        #model.apply(init_weights)
         model.load_state_dict(checkpoint['state_dict'], strict=False)
-        #optimizer.load_state_dict(checkpoint["optimizer"])
-        #scheduler.load_state_dict(checkpoint["scheduler"])
+        optimizer.load_state_dict(checkpoint["optimizer"])
+        scheduler.load_state_dict(checkpoint["scheduler"])
     else:
         print("=> no checkpoint found at '{}'".format(checkpoint_dir))
         if not pretrained:
             print("=> randomly initializing networks...")
-            model.apply(init_weights)
+            #resnet 已经做了初始化，这里无需继续做初始化了
+            #model.apply(init_weights)
 
     # Lossess
     criterion = obj_factory(criterion).to(device)
@@ -268,7 +281,7 @@ def main(
 
         # Save models checkpoints
         is_best = epoch_acc > best_acc
-        best_iou = max(epoch_acc, best_acc)
+        best_acc = max(epoch_acc, best_acc)
         save_checkpoint(exp_dir, 'model', {
             'epoch': epoch + 1,
             'state_dict': model.state_dict(),

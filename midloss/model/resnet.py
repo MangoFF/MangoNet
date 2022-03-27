@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from torch.hub import load_state_dict_from_url
-import random
+
 
 __all__ = ['ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101',
            'resnet152', 'resnext50_32x4d', 'resnext101_32x8d',
@@ -156,7 +156,7 @@ class ResNet(nn.Module):
                                        dilate=replace_stride_with_dilation[2])
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(512 * block.expansion, num_classes)
-        self.cossim=torch.nn.functional.cosine_similarity
+
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
@@ -199,8 +199,6 @@ class ResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def _forward_impl(self, x):
-        loss=1
-        
         # See note [TorchScript super()]
         x = self.conv1(x)
         x = self.bn1(x)
@@ -208,38 +206,18 @@ class ResNet(nn.Module):
         x = self.maxpool(x)
 
         x = self.layer1(x)
-        i=random.randint(0,x.shape[1]-1)
-        j=random.randint(0,x.shape[1]-1)
-        while i==j:
-            j=random.randint(0,x.shape[1]-1)
-        loss*=self.cossim(x[:,i],x[:,j]).sum(1)
-
-        x=self.dropout(x)     
+        x=self.dropout(x)
         x = self.layer2(x)
-        i=random.randint(0,x.shape[1]-1)
-        j=random.randint(0,x.shape[1]-1)
-        while i==j:
-            j=random.randint(0,x.shape[1]-1)
-        loss*=self.cossim(x[:,i],x[:,j]).sum(1)
         x=self.dropout(x)
         x = self.layer3(x)
-        i=random.randint(0,x.shape[1]-1)
-        j=random.randint(0,x.shape[1]-1)
-        while i==j:
-            j=random.randint(0,x.shape[1]-1)
-        loss*=self.cossim(x[:,i],x[:,j]).sum(1)
         x=self.dropout(x)
         x = self.layer4(x)
-        i=random.randint(0,x.shape[1]-1)
-        j=random.randint(0,x.shape[1]-1)
-        while i==j:
-            j=random.randint(0,x.shape[1]-1)
-        loss*=self.cossim(x[:,i],x[:,j]).sum(1)
         x=self.dropout(x)
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
         x = self.fc(x)
-        return x,loss
+
+        return x
 
     def forward(self, x):
         return self._forward_impl(x)
@@ -376,9 +354,3 @@ def wide_resnet101_2(pretrained=False, progress=True, **kwargs):
     kwargs['width_per_group'] = 64 * 2
     return _resnet('wide_resnet101_2', Bottleneck, [3, 4, 23, 3],
                    pretrained, progress, **kwargs)
-if __name__=="__main__":
-    model=resnet34(num_classes=10)
-    x=torch.randn(3,3,512,512)
-    y,loss=model(x)
-    print(y.shape)
-    print(loss.shape)

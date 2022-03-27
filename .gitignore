@@ -1,3 +1,5 @@
 midloss/data
 midloss/checkpoints
 .idea
+*.log
+*.pyc

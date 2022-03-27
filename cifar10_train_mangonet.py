@@ -9,7 +9,7 @@ from torchvision.transforms import ColorJitter,ToTensor,Normalize,RandomVertical
 import torchvision.datasets as datasets
 import torch.optim.lr_scheduler as lr_scheduler
 from midloss.train import main
-from midloss.model.resnet import resnet34
+from midloss.model.mangoNet import resnet34
 if __name__ == '__main__':
     project_dir = os.path.dirname(inspect.getabsfile(main))
 
@@ -44,7 +44,7 @@ if __name__ == '__main__':
     scheduler = partial(lr_scheduler.MultiStepLR,  milestones=[150, 225],  gamma=0.1)
 
     model = partial(resnet34,num_classes=10)
-    exp_name = "resnet34_origin"  # os.path.splitext(os.path.basename(__file__))[0]
+    exp_name = "resnet34_mangoNet"  # os.path.splitext(os.path.basename(__file__))[0]
     exp_dir = os.path.join('checkpoints/CIFAR10', exp_name)
     os.chdir(project_dir)
     os.makedirs(exp_dir, exist_ok=True)
