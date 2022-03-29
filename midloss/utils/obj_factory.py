@@ -10,6 +10,8 @@ KNOWN_MODULES = {
     'seg_transforms': 'hyperseg.datasets.seg_transforms',
     'transforms': 'torchvision.transforms',
 
+    #loss
+    
     # models
     'models': 'hyperseg.models',
     'mobilenet': 'hyperseg.models.mobilenet',

@@ -130,7 +130,7 @@ class ResNet(nn.Module):
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
         self._norm_layer = norm_layer
-        self.dropout=nn.Dropout(p=0.2)
+
         self.inplanes = 64
         self.dilation = 1
         if replace_stride_with_dilation is None:
@@ -206,13 +206,10 @@ class ResNet(nn.Module):
         x = self.maxpool(x)
 
         x = self.layer1(x)
-        x=self.dropout(x)
         x = self.layer2(x)
-        x=self.dropout(x)
         x = self.layer3(x)
-        x=self.dropout(x)
         x = self.layer4(x)
-        x=self.dropout(x)
+
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
         x = self.fc(x)

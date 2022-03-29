@@ -1,5 +1,7 @@
 import os
 
+from sklearn.metrics import top_k_accuracy_score
+
 import torchvision.transforms
 import yaml
 import time
@@ -20,6 +22,8 @@ from midloss.utils.obj_factory import obj_factory
 from midloss.utils.seg_utils import blend_seg
 from midloss.datasets.seg_transforms import Compose
 from midloss.utils.tensorboard_logger import TensorBoardLogger
+from midloss.utils.loss import SoftLabelCrossEntropyLoss
+from midloss.utils.bench import accuracy
 parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 general = parser.add_argument_group('general')
 general.add_argument('exp_dir', metavar='DIR',
@@ -58,13 +62,12 @@ data.add_argument('-vit', '--val_img_transforms', nargs='+',
                   help='validation image transforms')
 data.add_argument('-tt', '--tensor_transforms', nargs='+', help='tensor transforms',
                   default=('seg_transforms.ToTensor', 'seg_transforms.Normalize'))
-
 training = parser.add_argument_group('training')
 training.add_argument('-o', '--optimizer', default='optim.Adam(betas=(0.5,0.999))',
                       help='network\'s optimizer object')
 training.add_argument('-s', '--scheduler', default='lr_scheduler.StepLR(step_size=10,gamma=0.6)',
-                      help='scheduler object')
-training.add_argument('-c', '--criterion', default='nn.CrossEntropyLoss(ignore_index=255)',
+                      help='scheduler object')         
+training.add_argument('-c', '--criterion', default='nn.CrossEntropyLoss()',
                       help='criterion object')
 training.add_argument('-m', '--model', default='fsgan.models.simple_unet.UNet(n_classes=3,feature_scale=1)',
                       help='model object')
@@ -101,7 +104,6 @@ def main(
         # Set networks training mode
         #这里model.train(False)跟原来的model.eval()是一个效果
         model.train(train)
- 
 
         # For each batch
         for i, (input, target) in enumerate(pbar):
@@ -119,23 +121,26 @@ def main(
 
             # Execute model
             pred = model(input)
-            loss=None
+    
+            
             if(isinstance(pred,tuple)):
                 pred,loss=pred
-
             # if pred.shape[2:] != target.shape[1:]:  # Make sure the prediction and target are of the same resolution
             #     pred = F.interpolate(pred, size=target.shape[1:], mode='bilinear')
-
+            loss=None
             # Calculate loss
             if loss==None:
                 loss_total = criterion(pred, target)
             else:
                 loss_total=criterion(pred, target)
-                loss_total+=((epochs-epoch)/epochs)*torch.mean(loss)
-
+                loss_total+=((epochs-epoch)/epochs)*torch.max(loss)
+            #将target变成onehot编码
+            target=target.view(target.shape[0],-1)
+            target=torch.zeros(batch_size, len(train_dataset.classes),device=target.device,dtype=target.dtype).scatter_(1, target, 1)
+            
             # Benchmark
-            running_metrics.update(target.cpu().numpy(), pred.argmax(1).cpu().numpy())
-
+            #running_metrics.update(target.cpu().numpy(), pred.argmax(1).cpu().numpy())
+            t1,t5=running_metrics.get_scores(pred,target)
             if train:
                 # Update generator weights
                 optimizer.zero_grad()
@@ -147,7 +152,7 @@ def main(
                     scheduler.step()
 
             logger.update('losses', total=loss_total)
-            metric_scores = {'Acc': running_metrics.get_scores()[0]["Mean Acc : \t"]}
+            metric_scores = {"top1": t1,"top5": t5}
             logger.update('bench', **metric_scores)
             total_iter += dataset_loader.batch_size
 
@@ -171,7 +176,7 @@ def main(
         #     grid = make_grid(input, seg_pred, seg_gt)
         #     logger.log_image('vis', grid, epoch)
 
-        return logger.log_dict['losses']['total'].avg, logger.log_dict['bench']['Acc'].avg
+        return logger.log_dict['losses']['total'].avg, logger.log_dict['bench']['top1'].avg
 
     #################
     # Main pipeline #
@@ -209,7 +214,7 @@ def main(
     sampler = SequentialSampler(train_dataset)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, num_workers=workers, sampler=sampler,
                               shuffle=sampler is None, pin_memory=True, drop_last=True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, num_workers=workers, shuffle=False, pin_memory=True)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, num_workers=workers, shuffle=False, pin_memory=True,drop_last=True)
 
     # Setup Metrics
     running_metrics = runningScore(len(train_dataset.classes))
@@ -325,33 +330,23 @@ class runningScore(object):
         for lt, lp in zip(label_trues, label_preds):
             self.confusion_matrix += self._fast_hist(lt.flatten(), lp.flatten(), self.n_classes)
 
-    def get_scores(self):
-        """Returns accuracy score evaluation result.
-            - overall accuracy
-            - mean accuracy
-            - mean IU
-            - fwavacc
-        """
-        hist = self.confusion_matrix
-        acc = np.diag(hist).sum() / hist.sum()
-        acc_cls = np.diag(hist) / hist.sum(axis=1)
-        acc_cls = np.nanmean(acc_cls)
-        iu = np.diag(hist) / (hist.sum(axis=1) + hist.sum(axis=0) - np.diag(hist))
-        mean_iu = np.nanmean(iu)
-        freq = hist.sum(axis=1) / hist.sum()
-        fwavacc = (freq[freq > 0] * iu[freq > 0]).sum()
-        cls_iu = dict(zip(range(self.n_classes), iu))
+    def get_scores(self,output, target, topk=(1,5)):
+        """Computes the accuracy over the k top predictions for the specified values of k"""
+        with torch.no_grad():
+            maxk = max(topk)
+            batch_size = target.size(0)
+            if target.ndim == 2:
+                target = target.max(dim=1)[1]
 
-        return (
-            {
-                "Overall Acc: \t": acc,
-                "Mean Acc : \t": acc_cls,
-                "FreqW Acc : \t": fwavacc,
-                "Mean IoU : \t": mean_iu,
-            },
-            cls_iu,
-        )
+            _, pred = output.topk(maxk, 1, True, True)
+            pred = pred.t()
+            correct = pred.eq(target[None])
 
+            res = []
+            for k in topk:
+                correct_k = correct[:k].flatten().sum(dtype=torch.float32)
+                res.append(correct_k * (100.0 / batch_size))
+        return res
     def reset(self):
         self.confusion_matrix = np.zeros((self.n_classes, self.n_classes))
 
