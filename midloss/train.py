@@ -203,7 +203,7 @@ def main(
 
     # Initialize loaders
     #sampler = RandomSampler(train_dataset, True, train_iterations) if train_iterations is not None else None
-    #不再使用随机取样
+    #使用随机取样,不放回
     sampler = RandomSampler(train_dataset, False) if train_iterations is not None else None
     train_loader = DataLoader(train_dataset, batch_size=batch_size, num_workers=workers, sampler=sampler,
                               shuffle=sampler is None, pin_memory=True, drop_last=True)
@@ -246,7 +246,7 @@ def main(
         if not pretrained:
             print("=> randomly initializing networks...")
             #resnet 已经做了初始化，这里无需继续做初始化了
-            #model.apply(init_weights)
+            model.apply(init_weights)
 
     # Lossess
     criterion = obj_factory(criterion).to(device)
@@ -292,7 +292,7 @@ def main(
 
 def init_weights(m):
     if isinstance(m, nn.Conv2d):
-        nn.init.xavier_normal_(m.weight)
+        nn.init.kaiming_normal(m.weight)
 
 
 def limit_resolution(img, max_res=512, mode='bilinear'):

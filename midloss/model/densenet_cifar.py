@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.checkpoint as cp
 from collections import OrderedDict
-from .utils import load_state_dict_from_url
+from torch.hub import load_state_dict_from_url
 from torch import Tensor
 from torch.jit.annotations import List
 
@@ -145,12 +145,15 @@ class DenseNet(nn.Module):
         super(DenseNet, self).__init__()
 
         # First convolution
+        #在这里一样的，把kernel_size 7-3 stride 2-1 padding 3-1 移除maxpool
         self.features = nn.Sequential(OrderedDict([
-            ('conv0', nn.Conv2d(3, num_init_features, kernel_size=7, stride=2,
-                                padding=3, bias=False)),
+            #('conv0', nn.Conv2d(3, num_init_features, kernel_size=7, stride=2, padding=3, bias=False)),
+            ('conv0', nn.Conv2d(3, num_init_features, kernel_size=3, stride=1,
+                                padding=1, bias=False)),
             ('norm0', nn.BatchNorm2d(num_init_features)),
             ('relu0', nn.ReLU(inplace=True)),
-            ('pool0', nn.MaxPool2d(kernel_size=3, stride=2, padding=1)),
+            #('pool0', nn.MaxPool2d(kernel_size=3, stride=2, padding=1)),
+            ('pool0', nn.MaxPool2d(kernel_size=2, stride=1, padding=1)),
         ]))
 
         # Each denseblock
@@ -223,7 +226,7 @@ def _densenet(arch, growth_rate, block_config, num_init_features, pretrained, pr
     return model
 
 
-def densenet121(pretrained=False, progress=True, **kwargs):
+def densenet40(pretrained=False, progress=True, **kwargs):
     r"""Densenet-121 model from
     `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_
 
@@ -233,47 +236,10 @@ def densenet121(pretrained=False, progress=True, **kwargs):
         memory_efficient (bool) - If True, uses checkpointing. Much more memory efficient,
           but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_
     """
-    return _densenet('densenet121', 32, (6, 12, 24, 16), 64, pretrained, progress,
+    return _densenet('densenet121', 12, (4, 8, 16, 12), 64, pretrained, progress,
                      **kwargs)
-
-
-def densenet161(pretrained=False, progress=True, **kwargs):
-    r"""Densenet-161 model from
-    `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_
-
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
-        memory_efficient (bool) - If True, uses checkpointing. Much more memory efficient,
-          but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_
-    """
-    return _densenet('densenet161', 48, (6, 12, 36, 24), 96, pretrained, progress,
-                     **kwargs)
-
-
-def densenet169(pretrained=False, progress=True, **kwargs):
-    r"""Densenet-169 model from
-    `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_
-
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
-        memory_efficient (bool) - If True, uses checkpointing. Much more memory efficient,
-          but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_
-    """
-    return _densenet('densenet169', 32, (6, 12, 32, 32), 64, pretrained, progress,
-                     **kwargs)
-
-
-def densenet201(pretrained=False, progress=True, **kwargs):
-    r"""Densenet-201 model from
-    `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_
-
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
-        memory_efficient (bool) - If True, uses checkpointing. Much more memory efficient,
-          but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_
-    """
-    return _densenet('densenet201', 32, (6, 12, 48, 32), 64, pretrained, progress,
-                     **kwargs)
+if __name__=="__main__":
+    model=densenet40(num_classes=10)
+    x=torch.randn(5,3,32,32)
+    y=model(x)
+    print(y.shape)
