@@ -27,7 +27,7 @@ if __name__ == '__main__':
     tensor_transforms = [ToTensor(), Normalize(mean=[125.307/255, 122.961/255, 113.8575/255],
     std=[51.5865/255, 50.847/255, 51.255/255])]
 
-    epochs =100
+    epochs =150
 
     #使用Replacement=False 即使用不放回的随机取样
     train_iterations = 50000
@@ -42,9 +42,9 @@ if __name__ == '__main__':
     #采用SDG，lr=0.1,momentum=0.9, weight_decay=1e-4
     #学习率在总epochs的50% 和75%都衰减到原来的0.1
     optimizer = partial(optim.SGD, lr=0.4,momentum=0.9, weight_decay=1e-4)
-    scheduler = partial(lr_scheduler.MultiStepLR,  milestones=[30,60],  gamma=0.1)
+    scheduler = partial(lr_scheduler.MultiStepLR,  milestones=[90,125],  gamma=0.1)
     criterion=torch.nn.CrossEntropyLoss()
-    model = partial(densenet40,num_classes=10,drop_rate=0.2,pretrained=pretrained)
+    model = partial(densenet40,num_classes=10,drop_rate=0.1,pretrained=pretrained)
     exp_name = "densenet40_for_cifa"
     exp_dir = os.path.join('checkpoints/CIFAR10', exp_name)
     os.chdir(project_dir)      

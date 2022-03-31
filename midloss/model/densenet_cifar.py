@@ -148,12 +148,10 @@ class DenseNet(nn.Module):
         #在这里一样的，把kernel_size 7-3 stride 2-1 padding 3-1 移除maxpool
         self.features = nn.Sequential(OrderedDict([
             #('conv0', nn.Conv2d(3, num_init_features, kernel_size=7, stride=2, padding=3, bias=False)),
-            ('conv0', nn.Conv2d(3, num_init_features, kernel_size=3, stride=1,
-                                padding=1, bias=False)),
+            ('conv0', nn.Conv2d(3, num_init_features, kernel_size=3, stride=1,padding=1, bias=False)),
             ('norm0', nn.BatchNorm2d(num_init_features)),
             ('relu0', nn.ReLU(inplace=True)),
-            #('pool0', nn.MaxPool2d(kernel_size=3, stride=2, padding=1)),
-            ('pool0', nn.MaxPool2d(kernel_size=2, stride=1, padding=1)),
+            ('pool0', nn.MaxPool2d(kernel_size=3, stride=2, padding=1)),
         ]))
 
         # Each denseblock
@@ -236,7 +234,7 @@ def densenet40(pretrained=False, progress=True, **kwargs):
         memory_efficient (bool) - If True, uses checkpointing. Much more memory efficient,
           but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_
     """
-    return _densenet('densenet121', 12, (4, 8, 16, 12), 64, pretrained, progress,
+    return _densenet('densenet121', 12, (5, 10, 20), 64, pretrained, progress,
                      **kwargs)
 if __name__=="__main__":
     model=densenet40(num_classes=10)

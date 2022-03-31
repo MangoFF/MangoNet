@@ -9,8 +9,7 @@ from torchvision.transforms import ColorJitter,ToTensor,Normalize,RandomVertical
 import torchvision.datasets as datasets
 import torch.optim.lr_scheduler as lr_scheduler
 from midloss.train import main
-from midloss.model.densenet import densenet121
-from torchvision.models.squeezenet  import squeezenet1_0
+from torchvision.models.mobilenet  import squeezenet1_0
 if __name__ == '__main__':
     project_dir = os.path.dirname(inspect.getabsfile(main))
 
@@ -47,7 +46,7 @@ if __name__ == '__main__':
     optimizer = partial(optim.SGD, lr=0.4,momentum=0.9, weight_decay=1e-4)
     scheduler = partial(lr_scheduler.MultiStepLR,  milestones=[30,60],  gamma=0.1)
     criterion=torch.nn.CrossEntropyLoss()
-    model = partial(densenet121,num_classes=10,drop_rate=0.2)
+    model = partial(squeezenet1_0,num_classes=10,drop_rate=0.2)
     exp_name = "densenet121_origin"  # os.path.splitext(os.path.basename(__file__))[0]
     exp_dir = os.path.join('checkpoints/CIFAR10', exp_name)
     os.chdir(project_dir)      
