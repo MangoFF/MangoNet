@@ -13,7 +13,7 @@ import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data.dataloader import DataLoader
-from torch.utils.data.sampler import SequentialSampler
+from torch.utils.data.sampler import RandomSampler
 from tqdm import tqdm
 from midloss.utils.obj_factory import obj_factory
 from midloss.utils.utils import set_device, set_seed, str2int, save_checkpoint, get_arch
@@ -121,26 +121,19 @@ def main(
 
             # Execute model
             pred = model(input)
-    
-            
-            if(isinstance(pred,tuple)):
-                pred,loss=pred
             # if pred.shape[2:] != target.shape[1:]:  # Make sure the prediction and target are of the same resolution
             #     pred = F.interpolate(pred, size=target.shape[1:], mode='bilinear')
             loss=None
             # Calculate loss
-            if loss==None:
-                loss_total = criterion(pred, target)
-            else:
-                loss_total=criterion(pred, target)
-                loss_total+=((epochs-epoch)/epochs)*torch.max(loss)
+            loss_total = criterion(pred, target)
+ 
+            # Benchmark
+            #running_metrics.update(target.cpu().numpy(), pred.argmax(1).cpu().numpy())
             #将target变成onehot编码
             target=target.view(target.shape[0],-1)
             target=torch.zeros(batch_size, len(train_dataset.classes),device=target.device,dtype=target.dtype).scatter_(1, target, 1)
-            
-            # Benchmark
-            #running_metrics.update(target.cpu().numpy(), pred.argmax(1).cpu().numpy())
             t1,t5=running_metrics.get_scores(pred,target)
+
             if train:
                 # Update generator weights
                 optimizer.zero_grad()
@@ -211,7 +204,7 @@ def main(
     # Initialize loaders
     #sampler = RandomSampler(train_dataset, True, train_iterations) if train_iterations is not None else None
     #不再使用随机取样
-    sampler = SequentialSampler(train_dataset)
+    sampler = RandomSampler(train_dataset, False) if train_iterations is not None else None
     train_loader = DataLoader(train_dataset, batch_size=batch_size, num_workers=workers, sampler=sampler,
                               shuffle=sampler is None, pin_memory=True, drop_last=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, num_workers=workers, shuffle=False, pin_memory=True,drop_last=True)
