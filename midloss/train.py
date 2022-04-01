@@ -1,7 +1,4 @@
 import os
-
-from sklearn.metrics import top_k_accuracy_score
-
 import torchvision.transforms
 import yaml
 import time
@@ -22,7 +19,6 @@ from midloss.utils.obj_factory import obj_factory
 from midloss.utils.seg_utils import blend_seg
 from midloss.datasets.seg_transforms import Compose
 from midloss.utils.tensorboard_logger import TensorBoardLogger
-from midloss.utils.loss import SoftLabelCrossEntropyLoss
 from midloss.utils.bench import accuracy
 parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 general = parser.add_argument_group('general')
@@ -98,7 +94,7 @@ def main(
     def proces_epoch(dataset_loader, train=True):
         stage = 'TRAINING' if train else 'VALIDATION'
         total_iter = len(dataset_loader) * dataset_loader.batch_size * epoch
-        pbar = tqdm(dataset_loader, unit='batches')
+        pbar = tqdm(dataset_loader, unit='batches',mininterval=1)
         logger.reset()
 
         # Set networks training mode
@@ -292,7 +288,7 @@ def main(
 
 def init_weights(m):
     if isinstance(m, nn.Conv2d):
-        nn.init.kaiming_normal(m.weight)
+        nn.init.kaiming_normal_(m.weight)
 
 
 def limit_resolution(img, max_res=512, mode='bilinear'):
