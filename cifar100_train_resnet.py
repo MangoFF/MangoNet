@@ -10,17 +10,17 @@ from torchvision.transforms import ColorJitter,ToTensor,Normalize,RandomVertical
 import torchvision.datasets as datasets
 import torch.optim.lr_scheduler as lr_scheduler
 from midloss.train import main
-from midloss.model.mangoNet_cifar import mangoresnet_for_cifar
+from midloss.model.resnet_cifar import resnet20_for_cifar
 if __name__ == '__main__':
     project_dir = os.path.dirname(inspect.getabsfile(main))
 
     data_dir = 'data'
 
-    train_dataset = partial(datasets.CIFAR10,
+    train_dataset = partial(datasets.CIFAR100,
     root=data_dir,
     train=True,
     download=True)
-    val_dataset = partial(datasets.CIFAR10,
+    val_dataset = partial(datasets.CIFAR100,
     root=data_dir,
     train=False,
     download=True)
@@ -44,11 +44,11 @@ if __name__ == '__main__':
     #按照densenet里面训训练的办法
     #采用SDG，lr=0.1,momentum=0.9, weight_decay=1e-4
     #学习率在总epochs的50% 和75%都衰减到原来的0.1
-    optimizer = partial(optim.SGD, lr=0.1,momentum=0.9, weight_decay=4e-4)
+    optimizer = partial(optim.SGD, lr=0.4,momentum=0.9, weight_decay=4e-4)
     scheduler = partial(lr_scheduler.MultiStepLR,  milestones=[35,65],  gamma=0.1)
     criterion=torch.nn.CrossEntropyLoss()
-    model = partial(mangoresnet_for_cifar,num_classes=10,pretrained = pretrained)
-    exp_name = "mangoresnet_for_cifar_1"  # os.path.splitext(os.path.basename(__file__))[0]
+    model = partial(resnet20_for_cifar,num_classes=100,pretrained = pretrained)
+    exp_name = "resnet20_for_cifar100"  # os.path.splitext(os.path.basename(__file__))[0]
     exp_dir = os.path.join('checkpoints/CIFAR10', exp_name)
     os.chdir(project_dir)      
     os.makedirs(exp_dir, exist_ok=True)

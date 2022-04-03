@@ -197,6 +197,8 @@ class ResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def _forward_impl(self, x):
+        #在我的视角里，还差这样几个问题
+        #1.物体尺度不变性，2.物体亮度不变性，3.翻转不变性
         # See note [TorchScript super()]
         x = self.conv1(x)
         #x = self.bn1(x)
