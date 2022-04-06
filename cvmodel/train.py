@@ -12,14 +12,14 @@ import torch.nn.functional as F
 from torch.utils.data.dataloader import DataLoader
 from torch.utils.data.sampler import RandomSampler
 from tqdm import tqdm
-from midloss.utils.obj_factory import obj_factory
-from midloss.utils.utils import set_device, set_seed, str2int, save_checkpoint, get_arch
-from midloss.utils.img_utils import make_grid
-from midloss.utils.obj_factory import obj_factory
-from midloss.utils.seg_utils import blend_seg
-from midloss.datasets.seg_transforms import Compose
-from midloss.utils.tensorboard_logger import TensorBoardLogger
-from midloss.utils.bench import accuracy
+from cvmodel.utils.obj_factory import obj_factory
+from cvmodel.utils.utils import set_device, set_seed, str2int, save_checkpoint, get_arch
+from cvmodel.utils.img_utils import make_grid
+from cvmodel.utils.obj_factory import obj_factory
+from cvmodel.utils.seg_utils import blend_seg
+from cvmodel.datasets.seg_transforms import Compose
+from cvmodel.utils.tensorboard_logger import TensorBoardLogger
+from cvmodel.utils.bench import accuracy
 parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 general = parser.add_argument_group('general')
 general.add_argument('exp_dir', metavar='DIR',

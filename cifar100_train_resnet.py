@@ -9,8 +9,8 @@ import torch
 from torchvision.transforms import ColorJitter,ToTensor,Normalize,RandomVerticalFlip,RandomHorizontalFlip,RandomAffine,Pad,RandomCrop
 import torchvision.datasets as datasets
 import torch.optim.lr_scheduler as lr_scheduler
-from midloss.train import main
-from midloss.model.resnet_cifar import resnet20_for_cifar
+from cvmodel.train import main
+from cvmodel.model.resnet_cifar import resnet20_for_cifar
 if __name__ == '__main__':
     project_dir = os.path.dirname(inspect.getabsfile(main))
 
@@ -48,7 +48,7 @@ if __name__ == '__main__':
     scheduler = partial(lr_scheduler.MultiStepLR,  milestones=[35,65],  gamma=0.1)
     criterion=torch.nn.CrossEntropyLoss()
     model = partial(resnet20_for_cifar,num_classes=100,pretrained = pretrained)
-    exp_name = "resnet20_for_cifar100"  # os.path.splitext(os.path.basename(__file__))[0]
+    exp_name = "resnet20_cifar100"  # os.path.splitext(os.path.basename(__file__))[0]
     exp_dir = os.path.join('checkpoints/CIFAR10', exp_name)
     os.chdir(project_dir)      
     os.makedirs(exp_dir, exist_ok=True)

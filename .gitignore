@@ -1,5 +1,5 @@
-midloss/data
-midloss/checkpoints
+cvmodel/data
+cvmodel/checkpoints
 .idea
 *.log
 *.pyc

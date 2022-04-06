@@ -1,6 +1,6 @@
 import os
 import sys
-sys.path.append("...")
+sys.path.append("../../../")
 import inspect
 from functools import partial
 import torch.optim as optim
@@ -9,8 +9,8 @@ import torch
 from torchvision.transforms import ColorJitter,ToTensor,Normalize,RandomVerticalFlip,RandomHorizontalFlip,RandomAffine,Pad,RandomCrop
 import torchvision.datasets as datasets
 import torch.optim.lr_scheduler as lr_scheduler
-from midloss.train import main
-from midloss.model.resnet_cifar import resnet20_for_cifar
+from cvmodel.train import main
+from cvmodel.model.resnet_cifar import resnet20_for_cifar
 if __name__ == '__main__':
     project_dir = os.path.dirname(inspect.getabsfile(main))
 

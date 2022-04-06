@@ -9,8 +9,8 @@ import torchvision
 from torchvision.transforms import ColorJitter,ToTensor,Normalize,RandomVerticalFlip,RandomHorizontalFlip,RandomAffine,Pad,RandomCrop
 import torchvision.datasets as datasets
 import torch.optim.lr_scheduler as lr_scheduler
-from midloss.train import main
-from midloss.model.efficiennet_cifar import efficientnet_b0
+from cvmodel.train import main
+from cvmodel.model.efficiennet_cifar import efficientnet_b0
 if __name__ == '__main__':
     project_dir = os.path.dirname(inspect.getabsfile(main))
 

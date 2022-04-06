@@ -8,8 +8,8 @@ import torch
 from torchvision.transforms import ToTensor,Normalize,RandomHorizontalFlip,Pad,RandomCrop
 import torchvision.datasets as datasets
 import torch.optim.lr_scheduler as lr_scheduler
-from midloss.train import main
-from midloss.model.mobilenetV3_cifar  import mobilenet_v3_small
+from cvmodel.train import main
+from cvmodel.model.mobilenetV3_cifar  import mobilenet_v3_small
 if __name__ == '__main__':
     project_dir = os.path.dirname(inspect.getabsfile(main))
 
